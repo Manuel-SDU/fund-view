@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>我的基金账户实时估值</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: system-ui; padding: 16px; background: #f7f7f7; }
+    h2 { margin-bottom: 6px; }
+    .total { font-size: 20px; margin-bottom: 12px; }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.06);
+    }
+    .up { color: #e60012; }
+    .down { color: #009944; }
+  </style>
+</head>
+<body>
+
+<h2>📈 陈泽的基金账户</h2>
+<div class="total" id="total">加载中…</div>
+<div id="list"></div>
+
+<script>
+const funds = [
+  { code: "021363", name: "易方达中证沪深港黄金产业股票指数C", money: 666.60 }, 
+{ code: "014674", name: "富国中证港股通互联网ETF联接C", money: 97.04},
+ { code: "012970", name: "鹏华国证半导体芯片ETF联接C", money: 255.59 },
+ { code: “025194", name: "银华中证全指证券公司ETF联接C", money: 48.63 },
+ { code: "025857", name: "华夏中证电网设备主题ETF联接C", money: 230.00 },
+  { code: "005827", name: "兴业中证港股通互联网指数C", money: 1430.91 }
+];
+
+function load() {
+  let total = 0;
+  let html = "";
+
+  Promise.all(
+    funds.map(f =>
+      fetch(`https://fundgz.1234567.com.cn/js/${f.code}.js`)
+        .then(r => r.text())
+        .then(t => JSON.parse(t.match(/\{.*\}/)[0]))
+        .then(d => {
+          let rate = parseFloat(d.gszzl);
+          let value = f.money * (1 + rate / 100);
+          total += value;
+
+          html += `
+            <div class="card">
+              <strong>${f.name}</strong><br>
+              涨跌幅：
+              <span class="${rate >= 0 ? "up" : "down"}">${rate}%</span><br>
+              当前估值：${value.toFixed(2)} 元
+            </div>
+          `;
+        })
+    )
+  ).then(() => {
+    document.getElementById("total").innerText =
+      "账户总估值：" + total.toFixed(2) + " 元";
+    document.getElementById("list").innerHTML = html;
+  });
+}
+
+load();
+setInterval(load, 30000);
+</script>
+
+</body>
+</html>
